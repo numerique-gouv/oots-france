@@ -6,8 +6,7 @@ module EvidenceProvision
   # of it — identifier, scheme, name, language of that name — so a refusal
   # founded on any of those would travel out inside a message breaking
   # `R-EDM-ERR-C010`, `C027`, `C028` or `C029`, all FATAL, under France's own
-  # signature. The scheme is besides the `type` of the ebMS `finalRecipient`,
-  # which is how the answer would be routed at all.
+  # signature.
   #
   # Hence a step of its own before `ChooseAnswer`, beside
   # `RejectMalformedIdentifiers`, which turns away the ebMS identifiers for the

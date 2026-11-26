@@ -26,6 +26,14 @@ class EbmsHeaderParser
   # and the two must agree — see `EdmSpecification`.
   def specification_id = property('SpecificationId')
 
+  # C1 and C4 as the sender's header names them, value and `type`, which every
+  # answer copies back swapped — chapter 4.7 §2.4, `R-ebMS_ebMS-05` to `-08`.
+  # Read raw: those rules compare the strings without `normalize-space()`, so a
+  # value trimmed here would no longer be the one they hold the answer to.
+  def original_sender = identity('originalSender')
+
+  def final_recipient = identity('finalRecipient')
+
   # The instant the sending gateway stamped, and the only origin a timeout of
   # chapter 4.4 can be counted from: our own reception says when we took the
   # message in hand, not when it arrived — `retention_undownloaded` lets the
@@ -74,7 +82,14 @@ class EbmsHeaderParser
   # whitespace fails the UUID pattern whether it is collapsed or not.
   def normalised(value) = value&.strip
 
-  def property(name) = text_at(user_message, "./eb:MessageProperties/eb:Property[@name='#{name}']")
+  def property(name) = text_at(user_message, property_path(name))
+
+  def identity(name)
+    found = at(user_message, property_path(name))
+    EbmsIdentity.new(id: found&.text, type_id: attribute(found, 'type'))
+  end
+
+  def property_path(name) = "./eb:MessageProperties/eb:Property[@name='#{name}']"
 
   def part_property(part, name) = text_at(part, "./eb:PartProperties/eb:Property[@name='#{name}']")
 end

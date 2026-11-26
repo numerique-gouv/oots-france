@@ -24,6 +24,27 @@ RSpec.describe RetrievedMessageParser do
       expect(message.exchange_id).to eq('1647038b-7eaf-4711-b738-d5d83f96fa7b')
     end
 
+    # The two corners every answer copies back swapped, value and `type`.
+    it 'reads the original sender and the final recipient of the header' do
+      expect([message.original_sender.id, message.original_sender.type_id])
+        .to eq(['00000000000002', 'urn:cef.eu:names:identifier:EAS:0009'])
+      expect([message.final_recipient.id, message.final_recipient.type_id])
+        .to eq(['blue_gw', 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'])
+    end
+
+    it 'reads an absent corner as an identity with neither value nor type' do
+      absent = readdressed(message, 'originalSender', id: nil, type: nil).original_sender
+
+      expect([absent.id, absent.type_id]).to eq([nil, nil])
+    end
+
+    # `R-ebMS_ebMS-05` to `-08` compare without `normalize-space()`.
+    it 'reads a corner as it is written, surrounding whitespace included' do
+      padded = readdressed(message, 'finalRecipient', id: ' blue_gw ', type: 'urn:x').final_recipient
+
+      expect(padded.id).to eq(' blue_gw ')
+    end
+
     it 'reads the sender, which is where the answer goes' do
       expect(message.sender).to be_a(AccessPoint).and(be_valid)
     end

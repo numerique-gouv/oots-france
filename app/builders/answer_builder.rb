@@ -38,18 +38,22 @@ class AnswerBuilder
   # The corners swap on the way back, and the exchange identifier received is
   # reused: that is what ties both legs of one exchange together.
   #
-  # The original sender is read off the body: `R-ebMS_EDM-RESP-01` and `-02`
-  # (FATAL) hold it to the `EP` an evidence response announces,
-  # `R-ebMS_EDM-ERR-01` and `-02` (CAUTION) to the `ErrorProvider` of an error,
-  # and one source cannot disagree with itself.
+  # Both corners are the request's header swapped, value and `type`, and never
+  # read off a body — chapter 4.7 §2.4, `R-ebMS_ebMS-05` to `-08` (FATAL), and
+  # the Commission's instruction of 2026-11-26 (OOTS-329), for errors as for
+  # responses.
+  # Where the request's header names other parties than its body, the answer
+  # then breaks `R-ebMS_EDM-RESP-01` to `-04` or `R-ebMS_EDM-ERR-01` to `-04`:
+  # no answer can satisfy both sets, its `EvidenceRequester` admitting one agent
+  # only, which `R-EDM-REQ_EDM-RESP-13` holds to the request's `ER`.
   def envelope(body, action, attachment: EmptyAttachment.new)
     OutgoingEnvelopeBuilder.new(
       body:,
       attachment:,
       action:,
       recipient: message.sender,
-      original_sender: body.provider.ebms_identity,
-      final_recipient: requester.ebms_identity,
+      original_sender: message.final_recipient,
+      final_recipient: message.original_sender,
       conversation_id: message.conversation_id,
       exchange_id: message.exchange_id,
       specification:,

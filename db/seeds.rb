@@ -88,6 +88,18 @@ if Rails.env.development?
     { 'language' => 'FR', 'text' => 'Vérifiez le document avant son envoi à la démarche.' },
   ].freeze
 
+  # Ce qu'`IncomingMessage::Process#abandon_exchange` inscrit sur l'échange
+  # quand `RejectUnaddressableRequest` refuse : la raison du refus, composée
+  # par les clés mêmes du code.
+  unaddressable_reason = lambda do |problem, property|
+    I18n.t("interactors.evidence_provision.reject_unaddressable_request.#{problem}", property:)
+  end
+  unaddressable = lambda do |problem, property|
+    I18n.t('interactors.incoming_message.process.abandoned',
+      reason: I18n.t('interactors.incoming_message.process.unreadable'),
+      error: unaddressable_reason.call(problem, property))
+  end
+
   scenarios = [
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
       specification: EdmSpecification::V2_0,
@@ -321,6 +333,28 @@ if Rails.env.development?
         error: DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found').summary),
       presumed: true,
       events: %w[request_sent] },
+    # Deux requêtes dont l'en-tête laisse la réponse sans adresse : toute
+    # réponse recopie, inversés, l'originalSender et le finalRecipient de
+    # l'en-tête reçu, et `RejectUnaddressableRequest` refuse sans rien renvoyer.
+    # L'arrivée est journalisée, l'échange ouvert, puis abandonné par
+    # `IncomingMessage::Process` sous la raison du refus ; le refus a sa ligne
+    # plus bas. L'en-tête de l'arrivée porte ce que la requête portait : pas
+    # d'originalSender pour l'un, un finalRecipient sans type pour l'autre.
+    { incoming: true, status: 'failed', country_code: 'DK',
+      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
+      error_description: unaddressable.call(:missing_value, 'originalSender'),
+      arrival_corners: "\n      " \
+                       '<eb:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000001</eb:Property>',
+      events: %w[request_received] },
+    { incoming: true, status: 'failed', country_code: 'IE',
+      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
+      error_description: unaddressable.call(:missing_type, 'finalRecipient'),
+      arrival_corners: "\n      " \
+                       '<eb:Property name="originalSender" type="urn:cef.eu:names:identifier:EAS:0208">0671516647</eb:Property>' \
+                       "\n      " + '<eb:Property name="finalRecipient">00000000000001</eb:Property>',
+      events: %w[request_received] },
   ]
 
   # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
@@ -654,10 +688,10 @@ if Rails.env.development?
   #
   # On the 1.2 line the header names no exchange: the one the line carries is
   # France's own, minted for it, and the caller passes nil.
-  demonstration_header = lambda do |action:, message_id:, conversation_id:, exchange_id:, occurred_at:|
+  demonstration_header = lambda do |action:, message_id:, conversation_id:, exchange_id:, occurred_at:, corners: nil|
     if exchange_id
       exchange_property = <<~XML.chomp.indent(4).prepend("\n")
-        <eb:MessageProperties>
+        <eb:MessageProperties>#{corners}
           <eb:Property name="ExchangeId">#{exchange_id}</eb:Property>
         </eb:MessageProperties>
       XML
@@ -733,7 +767,7 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without, :presumed, :decision, :previewed, :student_status).merge(
+        :confirmed_without, :presumed, :decision, :previewed, :student_status, :arrival_corners).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre, et
           # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
@@ -814,7 +848,8 @@ if Rails.env.development?
       header = if event_type.in?(carries_message)
                  { ebms_header: demonstration_header.call(action: ebms_actions[event_type], message_id:,
                    conversation_id: exchange.conversation_id,
-                   exchange_id: (exchange.exchange_id unless exchange.minted_identifier?), occurred_at:) }
+                   exchange_id: (exchange.exchange_id unless exchange.minted_identifier?), occurred_at:,
+                   corners: (scenario[:arrival_corners] if event_type == 'request_received')) }
                else
                  {}
                end
@@ -957,6 +992,25 @@ if Rails.env.development?
       procedure_code: refused_version.procedure_code,
       country_code: refused_version.country_code,
       detail: refused_version.error_description,
+    )
+  end
+
+  # Le refus de `RejectUnaddressableRequest`, sur les deux échanges ouverts
+  # pour lui : exactement ce qu'`AuditTrail#request_refused` écrit, les champs
+  # lus sur l'échange.
+  { 'DK' => [:missing_value, 'originalSender'], 'IE' => [:missing_type, 'finalRecipient'] }
+    .each do |country, (problem, property)|
+    refused = demonstrations.find { |one| one.incoming? && one.country_code == country }
+    next if AuditEvent.exists?(exchange_id: refused.exchange_id, event_type: 'request_refused')
+
+    AuditEvent.create!(
+      event_type: 'request_refused', occurred_at: refused.created_at + 1.second,
+      conversation_id: refused.conversation_id,
+      exchange_id: refused.exchange_id,
+      evidence_requester_id: refused.evidence_requester_id,
+      procedure_code: refused.procedure_code,
+      country_code: refused.country_code,
+      detail: unaddressable_reason.call(problem, property),
     )
   end
 

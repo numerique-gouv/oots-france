@@ -1524,8 +1524,7 @@ fr:
       # « rim:Element/sdg:Agent » sur le rim:SlotValue — et non son message, qui
       # dit que chaque rim:Element « MUST use » un agent : un élément sans agent
       # à côté d'un élément qui en porte un satisfait la règle. Ce refus-là ne
-      # repart pas — sans agent, ni valeur à recopier ni finalRecipient à
-      # adresser —, et il précède C074, qui compterait sinon les classifications
+      # repart pas — sans agent, pas de valeur à recopier —, et il précède C074, qui compterait sinon les classifications
       # d'agents qui n'existent pas.
       collection_without_agent: >-
         La collection « EvidenceRequester » de la requête reçue ne porte aucun agent.
@@ -2488,6 +2487,18 @@ fr:
         malformed_identifier: >-
           L'identifiant %{element} « %{value} » n'est pas un UUID, que %{rule} exige : aucune réponse
           ne peut être signée sur cet échange.
+      reject_unaddressable_request:
+        # Un refus qui ne part pas au correspondant : toute réponse recopie,
+        # inversés, l'originalSender et le finalRecipient de l'en-tête reçu, et
+        # celle-ci n'aurait pas d'adresse. Aucune règle n'est nommée, pour que
+        # les quatre cas — propriété absente, valeur vide, type absent, type
+        # vide — se lisent de la même façon.
+        missing_type: >-
+          La propriété %{property} de l'en-tête n'a pas de type : la réponse n'aurait pas de
+          destinataire.
+        missing_value: >-
+          La propriété %{property} de l'en-tête n'a pas de valeur : la réponse n'aurait pas de
+          destinataire.
       reject_unanswerable_requester:
         # Même raison que ci-dessus, sur l'agent requêteur cette fois : une
         # ExceptionResponse recopierait l'identifiant, le schéma, le nom et la

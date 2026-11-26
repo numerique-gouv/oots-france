@@ -26,7 +26,8 @@ class RetrievedMessageParser
     @header = EbmsHeaderParser.new(@document)
   end
 
-  delegate :action, :conversation_id, :exchange_id, :sender, :sent_at, :specification_id, to: :header
+  delegate :action, :conversation_id, :exchange_id, :final_recipient, :original_sender, :sender, :sent_at,
+    :specification_id, to: :header
 
   # The EDM version this message is read in, which chapter 4.7 §2.6.2 has a
   # receiver of several settle from « both the previous mechanism based on the

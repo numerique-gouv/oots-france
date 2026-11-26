@@ -1758,6 +1758,11 @@ en:
         malformed_identifier: >-
           The %{element} identifier "%{value}" is not a UUID, which %{rule} requires: no answer
           can be signed on this exchange.
+      reject_unaddressable_request:
+        missing_type: >-
+          The %{property} property of the header has no type: the answer would have no recipient.
+        missing_value: >-
+          The %{property} property of the header has no value: the answer would have no recipient.
       reject_unanswerable_requester:
         unanswerable: >-
           %{reason} (%{rule}): no answer can name this requester without in turn breaking

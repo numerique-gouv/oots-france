@@ -165,6 +165,19 @@ Les réponses de la France y sont rendues **par le code de la production** — `
 
 Une paire échoue sur une règle `FATAL` enfreinte, et sort le script en `2` ; une règle `WARNING` ou `CAUTION` enfreinte ne s'affiche qu'avec `BAVARD=1`. Aucune paire n'est aujourd'hui attendue refusée.
 
+L'entête de toute réponse de la France recopie celui de la requête, inversé : son `finalRecipient` est l'`originalSender` de la requête, son `originalSender` le `finalRecipient` de la requête, valeur et `type`, sans rien lire des corps ([4.7 §2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931), `R-ebMS_ebMS-05` à `-08`). C'est une décision du 2026-11-26, qui applique une consigne de la Commission ([OOTS-329](https://linear.app/pole-api/issue/OOTS-329)) : quand l'entête et le corps de la requête nomment des parties différentes — un requêteur dont l'entête nomme sa plateforme intermédiaire —, aucune réponse ne peut satisfaire à la fois les règles qui la lient à l'entête de la requête et celles qui lient son entête à son propre corps, et la Commission tranche pour l'entête.
+
+> [!IMPORTANT]
+> Ne pas « corriger » les règles du tableau ci-dessous quand elles se lèvent sur une réponse à une requête dont l'entête et le corps divergent : elles sont enfreintes par décision.
+
+| Divergence de la requête | Règles enfreintes par la réponse |
+| --- | --- |
+| Son `originalSender` n'est pas son agent `ER` | `R-ebMS_EDM-RESP-03` et `-04` (`FATAL`) sur une réponse de justificatif, `R-ebMS_EDM-ERR-03` et `-04` (`FATAL`) sur une réponse d'erreur ([`ebMS_EDM-RESP.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/crossvalidation/sch/ebMS_EDM-RESP.sch), [`ebMS_EDM-ERR.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/crossvalidation/sch/ebMS_EDM-ERR.sch)) |
+| Son `finalRecipient` n'est pas le fournisseur de son slot `EvidenceProvider` | `R-ebMS_EDM-RESP-01` et `-02` (`FATAL`) sur une réponse de justificatif |
+| Son `finalRecipient` n'est pas le fournisseur de la configuration | `R-ebMS_EDM-ERR-01` et `-02` (`CAUTION`) sur une réponse d'erreur, dont l'`ErrorProvider` reste le fournisseur de la configuration |
+
+La requête du correspondant que le script confronte nomme les mêmes parties dans son entête et dans son corps : aucune de ces règles `FATAL` n'y est levée. La preuve de l'inversion sur une requête qui diverge se fait dans la suite RSpec.
+
 Ce que le script ne confronte pas :
 
 - les sept jeux qui confrontent un message à une réponse d'annuaire — `DSD-ERR_DSD-RESP`, `DSD-RESP_EDM-REQ`, `DSD-RESP_ebMS-REQ`, `EB-EVI_DSD-ERR005`, `EB-EVI_DSD-RESP`, `EB-EVI_EDM-REQ`, `EB-REQ_EB-EVI` : il ne rend aucune réponse d'annuaire, et le [validateur en ligne](docs/testing_services.md) les garde en propre ;
