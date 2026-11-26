@@ -105,6 +105,20 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response).to have_http_status(:bad_gateway)
     end
 
+    # The cause the gateway gave, and neither its status nor its address: the
+    # caller and the journal read the same sentence.
+    it 'hands the caller and the journal the cause of a gateway refusal' do
+      cause = submission_refusal.message
+      allow(EvidenceRequest::Fetch).to receive(:call).and_return(failure(:gateway_refused, cause))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body['erreur']).to include(*refusal_cause)
+      expect(response.parsed_body['erreur']).not_to include('status 500')
+      expect(AuditEvent.last).to have_attributes(event_type: 'request_refused', detail: response.parsed_body['erreur'])
+    end
+
     # A central directory that is down is upstream of the caller in the same
     # way, and the keys have to stay in step with `FAILURE_STATUSES`.
     it 'reports a directory that cannot be reached as 502 too' do
